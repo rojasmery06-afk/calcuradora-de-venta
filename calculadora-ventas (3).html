@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Ventas</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --border: #2a2a2a;
+    --accent: #c8f04a;
+    --accent2: #f04a7a;
+    --text: #f0f0f0;
+    --muted: #666;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    padding: 24px 16px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .header {
+    margin-bottom: 28px;
+  }
+
+  .badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #000;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--text);
+  }
+
+  h1 span { color: var(--accent); }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0;
+  }
+
+  .tab {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 8px 14px;
+    position: relative;
+    transition: color 0.2s;
+  }
+
+  .tab.active {
+    color: var(--accent);
+  }
+
+  .tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .field {
+    margin-bottom: 14px;
+  }
+
+  label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  input[type="number"], input[type="text"] {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    -moz-appearance: textfield;
+  }
+
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  input:focus { border-color: var(--accent); }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .results {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 18px;
+    margin-top: 20px;
+  }
+
+  .results-title {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .result-row:last-child { border-bottom: none; }
+
+  .result-label { font-size: 12px; color: var(--muted); }
+
+  .result-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .result-value.highlight { color: var(--accent); }
+  .result-value.negative { color: var(--accent2); }
+
+  .calc-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 13px;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: opacity 0.2s;
+  }
+
+  .calc-btn:hover { opacity: 0.85; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="badge">Widget · Ventas</div>
+    <h1>Calcu<span>ladora</span></h1>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('precio')">Precio / Descuento</button>
+    <button class="tab" onclick="switchTab('comision')">Comisión</button>
+    <button class="tab" onclick="switchTab('margen')">Margen</button>
+  </div>
+
+  <!-- TAB 1: PRECIO -->
+  <div class="panel active" id="tab-precio">
+    <div class="field"><label>Precio original ($)</label><input type="number" id="p-original" placeholder="0" oninput="calcPrecio()"></div>
+    <div class="row2">
+      <div class="field"><label>Descuento (%)</label><input type="number" id="p-descuento" placeholder="0" oninput="calcPrecio()"></div>
+      <div class="field"><label>IVA / Tax (%)</label><input type="number" id="p-iva" placeholder="16" oninput="calcPrecio()"></div>
+    </div>
+    <div class="results">
+      <div class="results-title">Resultado</div>
+      <div class="result-row"><span class="result-label">Descuento aplicado</span><span class="result-value negative" id="r-descuento">—</span></div>
+      <div class="result-row"><span class="result-label">Precio sin IVA</span><span class="result-value" id="r-siniva">—</span></div>
+      <div class="result-row"><span class="result-label">IVA</span><span class="result-value" id="r-iva">—</span></div>
+      <div class="result-row"><span class="result-label">Precio final</span><span class="result-value highlight" id="r-final">—</span></div>
+    </div>
+  </div>
+
+  <!-- TAB 2: COMISION -->
+  <div class="panel" id="tab-comision">
+    <div class="field"><label>Venta total ($)</label><input type="number" id="c-venta" placeholder="0" oninput="calcComision()"></div>
+    <div class="row2">
+      <div class="field"><label>% Comisión base</label><input type="number" id="c-base" placeholder="5" oninput="calcComision()"></div>
+      <div class="field"><label>% Bono por meta</label><input type="number" id="c-bono" placeholder="0" oninput="calcComision()"></div>
+    </div>
+    <div class="field"><label>Meta del período ($)</label><input type="number" id="c-meta" placeholder="0" oninput="calcComision()"></div>
+    <div class="results">
+      <div class="results-title">Resultado</div>
+      <div class="result-row"><span class="result-label">Comisión base</span><span class="result-value" id="r-cbase">—</span></div>
+      <div class="result-row"><span class="result-label">Bono adicional</span><span class="result-value" id="r-cbono">—</span></div>
+      <div class="result-row"><span class="result-label">% de meta alcanzado</span><span class="result-value" id="r-cmeta">—</span></div>
+      <div class="result-row"><span class="result-label">Total a cobrar</span><span class="result-value highlight" id="r-ctotal">—</span></div>
+    </div>
+  </div>
+
+  <!-- TAB 3: MARGEN -->
+  <div class="panel" id="tab-margen">
+    <div class="field"><label>Precio de venta ($)</label><input type="number" id="m-venta" placeholder="0" oninput="calcMargen()"></div>
+    <div class="field"><label>Costo del producto ($)</label><input type="number" id="m-costo" placeholder="0" oninput="calcMargen()"></div>
+    <div class="field"><label>Gastos operativos ($)</label><input type="number" id="m-gastos" placeholder="0" oninput="calcMargen()"></div>
+    <div class="results">
+      <div class="results-title">Resultado</div>
+      <div class="result-row"><span class="result-label">Ganancia bruta</span><span class="result-value" id="r-mbruta">—</span></div>
+      <div class="result-row"><span class="result-label">Ganancia neta</span><span class="result-value" id="r-mneta">—</span></div>
+      <div class="result-row"><span class="result-label">Margen bruto</span><span class="result-value" id="r-mpbruto">—</span></div>
+      <div class="result-row"><span class="result-label">Margen neto</span><span class="result-value highlight" id="r-mpneto">—</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function fmt(n) {
+    return '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function pct(n) { return n.toFixed(1) + '%'; }
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    const tabs = ['precio','comision','margen'];
+    const idx = tabs.indexOf(tab);
+    document.querySelectorAll('.tab')[idx].classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+  }
+
+  function calcPrecio() {
+    const orig = parseFloat(document.getElementById('p-original').value) || 0;
+    const desc = parseFloat(document.getElementById('p-descuento').value) || 0;
+    const iva = parseFloat(document.getElementById('p-iva').value) || 0;
+    const descAmt = orig * desc / 100;
+    const sinIva = orig - descAmt;
+    const ivaAmt = sinIva * iva / 100;
+    const final = sinIva + ivaAmt;
+    document.getElementById('r-descuento').textContent = fmt(descAmt);
+    document.getElementById('r-siniva').textContent = fmt(sinIva);
+    document.getElementById('r-iva').textContent = fmt(ivaAmt);
+    document.getElementById('r-final').textContent = fmt(final);
+  }
+
+  function calcComision() {
+    const venta = parseFloat(document.getElementById('c-venta').value) || 0;
+    const base = parseFloat(document.getElementById('c-base').value) || 0;
+    const bono = parseFloat(document.getElementById('c-bono').value) || 0;
+    const meta = parseFloat(document.getElementById('c-meta').value) || 0;
+    const cBase = venta * base / 100;
+    const cBono = venta * bono / 100;
+    const metaPct = meta > 0 ? (venta / meta * 100) : 0;
+    const total = cBase + (metaPct >= 100 ? cBono : 0);
+    document.getElementById('r-cbase').textContent = fmt(cBase);
+    document.getElementById('r-cbono').textContent = metaPct >= 100 ? fmt(cBono) : 'Meta no alcanzada';
+    document.getElementById('r-cmeta').textContent = pct(metaPct);
+    document.getElementById('r-ctotal').textContent = fmt(total);
+  }
+
+  function calcMargen() {
+    const venta = parseFloat(document.getElementById('m-venta').value) || 0;
+    const costo = parseFloat(document.getElementById('m-costo').value) || 0;
+    const gastos = parseFloat(document.getElementById('m-gastos').value) || 0;
+    const bruta = venta - costo;
+    const neta = bruta - gastos;
+    const pBruto = venta > 0 ? (bruta / venta * 100) : 0;
+    const pNeto = venta > 0 ? (neta / venta * 100) : 0;
+    document.getElementById('r-mbruta').textContent = fmt(bruta);
+    document.getElementById('r-mneta').textContent = fmt(neta);
+    document.getElementById('r-mpbruto').textContent = pct(pBruto);
+    document.getElementById('r-mpneto').textContent = pct(pNeto);
+  }
+
+  calcPrecio(); calcComision(); calcMargen();
+</script>
+</body>
+</html>
